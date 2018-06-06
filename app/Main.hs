@@ -1,4 +1,6 @@
-import HsArrow
+module Main where
 
-main = do
-  putStrLn "Hello World"
+import Lib
+
+main :: IO ()
+main = someFunc
