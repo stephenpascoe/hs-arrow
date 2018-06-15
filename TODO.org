@@ -1,0 +1,24 @@
+A Simple log of things to do on hs-haskell
+
+This file is written it org-mode format (See Emacs org-mode)
+
+** TODO Build gobject-introspection bindings automatically
+
+We need to be able to recreate the GI bindings when arrow c_glib changes.  This requires
+haskell-gi which we don't need for building the project in general.
+
+Use "stack script" to recreate bindings.  Entry point can either be a shell script or Makefile target.
+
+** TODO Test data
+
+Generate test data and write to arrow format.  To bootstrap this will be done in Python.
+
+** TODO Tool to inspect schema
+
+First step, make an executable which takes an arrow file and shows the schema.  This will be used for verification during development
+
+** TODO Builder monad
+
+** TODO Convert array to vector
+
+Can we do this without copying?
