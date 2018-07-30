@@ -17,17 +17,17 @@ import qualified Data.Text as T
 
 
 class ARR.IsArray a => IsArrowArray a where
-  slice     :: (MonadIO m) => Int64 -> Int64 -> a -> m (Maybe a)
+  -- | Cast an array if possible
+  maybeCastArray :: (MonadIO m, ARR.IsArray a') => a' -> m (Maybe a)
+
 
 class ARR.IsArray a => IsArrayOf a t | a -> t where
   getValue  :: MonadIO m => a -> Int64 -> m t
   getValues :: MonadIO m => a -> m [t]
 
+
 instance IsArrowArray ARR.Int64Array where
-  slice offset length a = do
-    genSlice <- ARR.arraySlice a offset length
-    mArr <- liftIO $ ARR.castTo ARR.Int64Array genSlice
-    return mArr
+  maybeCastArray a = liftIO $ ARR.castTo ARR.Int64Array a
 
 -- TODO : Other IsArrowArray instances
 
@@ -35,22 +35,36 @@ instance IsArrayOf ARR.Int64Array Int64 where
   getValue  = ARR.int64ArrayGetValue
   getValues = ARR.int64ArrayGetValues
 
+instance IsArrowArray ARR.Int32Array where
+  maybeCastArray a = liftIO $ ARR.castTo ARR.Int32Array a
 
 instance IsArrayOf ARR.Int32Array Int32 where
   getValue  = ARR.int32ArrayGetValue
   getValues = ARR.int32ArrayGetValues
 
+instance IsArrowArray ARR.Int16Array where
+  maybeCastArray a = liftIO $ ARR.castTo ARR.Int16Array a
+
 instance IsArrayOf ARR.Int16Array Int16 where
   getValue  = ARR.int16ArrayGetValue
   getValues = ARR.int16ArrayGetValues
+
+instance IsArrowArray ARR.Int8Array where
+  maybeCastArray a = liftIO $ ARR.castTo ARR.Int8Array a
 
 instance IsArrayOf ARR.Int8Array Int8 where
   getValue  = ARR.int8ArrayGetValue
   getValues = ARR.int8ArrayGetValues
 
+instance IsArrowArray ARR.FloatArray where
+  maybeCastArray a = liftIO $ ARR.castTo ARR.FloatArray a
+
 instance IsArrayOf ARR.FloatArray Float where
   getValue  = ARR.floatArrayGetValue
   getValues = ARR.floatArrayGetValues
+
+instance IsArrowArray ARR.DoubleArray where
+  maybeCastArray a = liftIO $ ARR.castTo ARR.DoubleArray a
 
 instance IsArrayOf ARR.DoubleArray Double where
   getValue  = ARR.doubleArrayGetValue
@@ -90,16 +104,28 @@ last a = do
   a!(len - 1)
 
 
+slice :: (MonadIO m, IsArrowArray a) => Int64 -> Int64 -> a -> m (Maybe a)
+slice offset length a = do
+    genSlice <- ARR.arraySlice a offset length
+    mArr <- maybeCastArray genSlice
+    return mArr
 
---    Nothing -> error "arraySlice returned uncastable array"
---    Just arr ->
-{-
-  convert $ offset length a
-  where convert arr = do
-          dType <- ARR.arrayGetValueDataType arr
-          mArr <- ARR.arrayCast arr dType Nothing
-          case mArr of
-            Nothing -> error "Array cannot be cast"
-            Just arr' -> return arr'
 
--}
+take :: (MonadIO m, IsArrowArray a) => Int64 -> a -> m (Maybe a)
+take n a = do
+  len <- length a
+  if n > len
+    then return (Just a)
+    else slice 0 n a
+
+drop :: (MonadIO m, IsArrowArray a) => Int64 -> a -> m (Maybe a)
+drop n a = do
+  len <- length a
+  if n > len
+    then return Nothing
+    else slice n (len - n) a
+
+
+-- TODO : what about splitAt 0?  Maybe we need empty array
+splitAt :: (MonadIO m, IsArrowArray a) => Int64 -> a -> m (Maybe (a, a))
+splitAt n a = undefined
