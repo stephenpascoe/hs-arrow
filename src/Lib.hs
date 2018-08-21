@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ImplicitPrelude #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE ExistentialQuantification #-}
 
 module Lib
     (
@@ -14,7 +15,7 @@ import Control.Monad.IO.Class
 import GHC.Int (Int8, Int16, Int32, Int64)
 import GHC.Float (Float, Double)
 import qualified Data.Text as T
-
+import Data.Proxy (Proxy)
 
 class ARR.IsArray a => IsArrowArray a where
   -- | Cast an array if possible
@@ -75,6 +76,14 @@ instance IsArrayOf ARR.StringArray T.Text where
   -- TODO : No c_glib equivilent.  Implement with foldr or similar
   getValues = undefined
 
+
+data ArrowArray = forall a . (ARR.IsArray a, IsArrowArray a) => ArrowArray a
+instance ARR.IsArray ArrowArray
+instance ARR.GObject ArrowArray where
+  gobjectType (ArrowArray a) = ARR.gobjectType a
+
+instance IsArrowArray ArrowArray where
+  maybeCastArray (ArrowArray a) = ArrowArray <$> maybeCastArray a
 
 -- TODO : Date types
 -- TODO : Lists
